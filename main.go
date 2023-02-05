@@ -27,7 +27,7 @@ func main() {
 		req.Header.Add("X-RapidAPI-Key", "356fcc1b96msh6b0261faa77fcd2p101d17jsnbbb68ac024b7")
 		req.Header.Add("X-RapidAPI-Host", "weatherapi-com.p.rapidapi.com")
 
-		res, _ := http.DefaultClient.Do(req)
+		res, err := http.DefaultClient.Do(req)
 		
 		if err != nil {
 		    fmt.Println("HTTP call failed:", err)
