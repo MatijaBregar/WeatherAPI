@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"io/ioutil"
 	"fmt"
+	"time"
 )
 
 type WeatherData struct {
