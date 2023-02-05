@@ -28,18 +28,18 @@ func main() {
 		req.Header.Add("X-RapidAPI-Host", "weatherapi-com.p.rapidapi.com")
 
 		res, err := http.DefaultClient.Do(req)
-		
+
 		if err != nil {
-		    fmt.Println("HTTP call failed:", err)
-		    return
+			fmt.Println("HTTP call failed:", err)
+			return
 		}
 
 		defer res.Body.Close()
 		body, _ := ioutil.ReadAll(res.Body)
 
 		weatherData := WeatherData{
-			City:    city,
-			Info:    string(body),
+			City: city,
+			Info: string(body),
 		}
 		jsonData, _ := json.Marshal(weatherData)
 		ioutil.WriteFile("weather.json", jsonData, 0600)
@@ -56,10 +56,10 @@ func main() {
 	server := &http.Server{
 		Addr:              ":8080",
 		ReadHeaderTimeout: 3 * time.Second,
-	    }
+	}
 
-	    err := server.ListenAndServe()
-	    if err != nil {
+	err := server.ListenAndServe()
+	if err != nil {
 		panic(err)
-	    }
+	}
 }
