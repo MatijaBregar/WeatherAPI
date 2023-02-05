@@ -1,11 +1,11 @@
 package main
 
 import (
-	"os"
 	"encoding/json"
-	"net/http"
-	"io/ioutil"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
 	"time"
 )
 
@@ -28,6 +28,11 @@ func main() {
 		req.Header.Add("X-RapidAPI-Host", "weatherapi-com.p.rapidapi.com")
 
 		res, _ := http.DefaultClient.Do(req)
+		
+		if err != nil {
+		    fmt.Println("HTTP call failed:", err)
+		    return
+		}
 
 		defer res.Body.Close()
 		body, _ := ioutil.ReadAll(res.Body)
