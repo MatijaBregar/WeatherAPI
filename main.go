@@ -36,7 +36,7 @@ func main() {
 			Info:    string(body),
 		}
 		jsonData, _ := json.Marshal(weatherData)
-		ioutil.WriteFile("weather.json", jsonData, 0644)
+		ioutil.WriteFile("weather.json", jsonData, 0600)
 
 		data, err := ioutil.ReadFile("weather.json")
 		if err != nil {
@@ -47,5 +47,13 @@ func main() {
 		fmt.Fprintf(w, string(data))
 	})
 
-	http.ListenAndServe(":8080", nil)
+	server := &http.Server{
+		Addr:              ":8080",
+		ReadHeaderTimeout: 3 * time.Second,
+	    }
+
+	    err := server.ListenAndServe()
+	    if err != nil {
+		panic(err)
+	    }
 }
