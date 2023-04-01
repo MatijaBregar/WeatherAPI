@@ -1,7 +1,5 @@
 <h1 align="center">
   <br>
-  <img src="" width="200">
-  <br>
   WeatherAPI
   <br>
 </h1>
@@ -11,13 +9,13 @@
 <p align="center">
   <a href="#key-features">Key Features</a> •
   <a href="#how-to-use">How To Use</a> •
+  <a href="#images">Images</a> •
   <a href="#credits">Credits</a>
 </p>
 
 ## Key Features
 
 * Simplified Information In JSON format
-    - <img src="" width="200">
 * Without Complex Integration
     - Input desired town
 * Returned Error
@@ -26,7 +24,7 @@
 
 ## How To Use
 
-To clone and run this application, you'll need [GIN](https://github.com/gin-gonic/gin) and [GO](https://go.dev/dl/) installed on your computer. From your command line:
+From your command line:
 
 ```bash
 # Clone this repository
@@ -35,18 +33,18 @@ $ git clone https://github.com/MatijaBregar/WeatherAPI.git
 # Go into the repository
 $ cd WeatherAPI
 
-# Run the app
+# Run the app (GO Version: 1.20 windows/amd64)
 $ go run main.go
 ```
 
-[Optional]
-For better and faster testing you can use [POSTMAN](https://www.postman.com).
-Use localhost:8080/{_city_} for HTTP GET request.
+## Images
+
+Example of JSON output
+<br>
+<img src="https://github.com/MatijaBregar/WeatherAPI/blob/main/imgs/JSON_example.png?raw=true" width="200">
 
 ## Credits
 
-This software uses the following technologies:
-
-- [GIN](https://github.com/gin-gonic/gin)
-- [GO](https://go.dev/dl/)
-- [WEATHER-API.COM](WeatherAPI.com)
+- It's built using gin framework (https://github.com/gin-gonic/gin) 
+- Written in GO programming language (https://go.dev/dl/) (Version: 1.20 windows/amd64)
+- Accessing data from the weather api (www.weatherAPI.com)

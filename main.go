@@ -1,64 +1,88 @@
 package main
 
 import (
-	"net/http"
+	"encoding/json"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
-	"encoding/json"
+	"k8s.io/klog/v2"
+	"net/http"
+	"unicode"
+	"weatherAPI/secrets"
+	"weatherAPI/utils"
 )
 
-type WeatherData struct {
-	City string `json:"city"`
-	Country string `json:"country"`
-	Temp_C float64 `json:"temp_c"`
-	Temp_F float64 `json:"temp_f"`
-	Wind_KPH float64 `json:"wind_kph"`
-	Wind_MPH float64 `json:"wind_mph"`
+func emptyCache() utils.WeatherData {
+	weatherData := utils.WeatherData{
+		City:     "None",
+		Country:  "None",
+		Temp_C:   0.0,
+		Temp_F:   0.0,
+		Wind_KPH: 0.0,
+		Wind_MPH: 0.0,
+	}
+	return weatherData
 }
 
-func getWeatherByCity(city string) (*WeatherData, error) {
+func isNumeric(s string) bool {
+	for _, c := range s {
+		if !unicode.IsDigit(c) {
+			return false
+		}
+	}
+	return true
+}
+
+func getWeatherByCity(city string) (*utils.WeatherData, error) {
 	url := "https://weatherapi-com.p.rapidapi.com/current.json?q=" + city
 
 	req, _ := http.NewRequest("GET", url, nil)
 
-	req.Header.Add("X-RapidAPI-Key", "356fcc1b96msh6b0261faa77fcd2p101d17jsnbbb68ac024b7")
+	req.Header.Add("X-RapidAPI-Key", secrets.GetAPIKey())
 	req.Header.Add("X-RapidAPI-Host", "weatherapi-com.p.rapidapi.com")
 
 	res, err := http.DefaultClient.Do(req)
 
 	if err != nil {
-		return nil, errors.New("Error getting weather data")
+		return nil, errors.New("Service is not available")
 	}
 
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 
 	var data map[string]interface{}
-    err2 := json.Unmarshal([]byte(string(body)), &data)
+	err2 := json.Unmarshal([]byte(string(body)), &data)
 
-    if err2 != nil {
-        return nil, errors.New("Error getting weather data")
-    }
+	if err2 != nil {
+		return nil, errors.New("Error while parsing data")
+	}
 
-	var weatherData WeatherData
+	var weatherData utils.WeatherData
 
 	if location, ok := data["location"].(map[string]interface{}); ok {
 		if current, ok := data["current"].(map[string]interface{}); ok {
-			weatherData := WeatherData{
-				City: location["name"].(string),
-				Country: location["country"].(string),
-				Temp_C: current["temp_c"].(float64),
-				Temp_F: current["temp_f"].(float64),
+			weatherData := utils.WeatherData{
+				City:     location["name"].(string),
+				Country:  location["country"].(string),
+				Temp_C:   current["temp_c"].(float64),
+				Temp_F:   current["temp_f"].(float64),
 				Wind_KPH: current["wind_kph"].(float64),
 				Wind_MPH: current["wind_mph"].(float64),
+				Is_day:   current["is_day"].(float64),
+				Wind_dir: current["wind_dir"].(string),
+				Humidity: current["humidity"].(float64),
 			}
+			keyValue := utils.KeyValue{Key: city, Value: weatherData}
+			addToCache(keyValue)
 			return &weatherData, nil
 		} else {
-			return nil, errors.New("Error getting weather data")
+			return nil, errors.New("Current informations not found")
 		}
 	} else {
-		return nil, errors.New("Error getting weather data")
+		if isNumeric(city) {
+			return nil, errors.New("Zip code not found")
+		}
+		return nil, errors.New("Location not found")
 	}
 
 	return &weatherData, nil
@@ -66,14 +90,52 @@ func getWeatherByCity(city string) (*WeatherData, error) {
 
 func getWeather(context *gin.Context) {
 	city := context.Param("city")
-	weatherData, err := getWeatherByCity(city)
+
+	rezult, err := fetchFromCache(city)
 
 	if err != nil {
-		context.IndentedJSON(http.StatusNotFound, gin.H{"error": "Was not able to get weather data"})
-		return
+		weatherData, err := getWeatherByCity(city)
+		if err != nil {
+			context.IndentedJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+
+		context.IndentedJSON(http.StatusOK, weatherData)
+	} else {
+		context.IndentedJSON(http.StatusOK, rezult)
+	}
+}
+
+func addToCache(object utils.KeyValue) error {
+	err := utils.CacheStore.Add(object)
+
+	if err != nil {
+		klog.Errorf("failed to add key value to cache error", err)
+		return err
+	}
+	return nil
+}
+
+func fetchFromCache(key string) (utils.WeatherData, error) {
+	obj, exists, err := utils.CacheStore.GetByKey(key)
+
+	if err != nil {
+		klog.Errorf("failed to add key value to cache error", err)
+		weatherData := emptyCache()
+		return weatherData, err
+	}
+	if !exists {
+		klog.Errorf("object does not exist in the cache")
+		weatherData := emptyCache()
+		return weatherData, errors.New("an error occurred")
 	}
 
-	context.IndentedJSON(http.StatusOK, weatherData)
+	klog.Errorf("Object found in cache")
+	return obj.(utils.KeyValue).Value, nil
+}
+
+func deleteFromCache(object utils.KeyValue) error {
+	return utils.CacheStore.Delete(object)
 }
 
 func main() {
